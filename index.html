@@ -197,8 +197,8 @@
   .verses {
     position: relative;
     z-index: 2;
-    height: 640vh;
-    height: 640svh;
+    height: 560vh;
+    height: 560svh;
     margin-top: -100vh;
     margin-top: -100svh;
     pointer-events: none;
@@ -501,16 +501,14 @@
 
     <div class="comp" id="comp">
       <div class="eyebrow">
-        <span class="eb" id="eb1">Eu sou a</span>
-        <span class="eb" id="eb2">Vocês são a</span>
+        <span class="eb" id="eb">Vocês são a</span>
       </div>
       <div class="line">
         <span class="slot" id="slot">LUZ</span>
       </div>
       <div class="mundo" id="mundo">do mundo.</div>
       <div class="ref">
-        <span class="rf" id="rf1">João 8:12</span>
-        <span class="rf" id="rf2">Mateus 5:14</span>
+        <span class="rf" id="rf">Mateus 5:14</span>
       </div>
     </div>
 
@@ -763,8 +761,8 @@
 
   var verses = $('verses'), stage = $('vstage'), bloom = $('vbloom'), vfade = $('vfade');
   var rayUp = $('vrayUp'), rayDown = $('vrayDown');
-  var eb1 = $('eb1'), eb2 = $('eb2'), slot = $('slot');
-  var mundo = $('mundo'), rf1 = $('rf1'), rf2 = $('rf2');
+  var eb = $('eb'), slot = $('slot');
+  var mundo = $('mundo'), rf = $('rf');
   var letters = Array.prototype.slice.call(stage.querySelectorAll('.vl'));
   var echoes  = Array.prototype.slice.call(stage.querySelectorAll('.echo'));
   var srays   = Array.prototype.slice.call(stage.querySelectorAll('.sray'));
@@ -884,12 +882,12 @@
     });
 
     // fachos centrais da abertura se recolhem quando o texto chega
-    var rf = 1 - easeOut(range(q, 0.05, 0.24));
-    rayUp.style.opacity = (0.42 * rf).toFixed(3);
-    rayDown.style.opacity = (0.30 * rf).toFixed(3);
+    var rc = 1 - easeOut(range(q, 0.05, 0.24));
+    rayUp.style.opacity = (0.42 * rc).toFixed(3);
+    rayDown.style.opacity = (0.30 * rc).toFixed(3);
 
-    // 2. expansão da luz (Mateus)
-    var e = easeInOut(range(q, 0.58, 0.86));
+    // 2. a luz se expande e se reflete
+    var e = easeInOut(range(q, 0.50, 0.80));
 
     var by = (L.cy - L.stageH / 2) * m;
     var bs = mix(1, 0.94, m) + 0.85 * e;
@@ -900,34 +898,23 @@
     var col = 'rgb(' + Math.round(mix(250, 253, e)) + ',' + Math.round(mix(244, 247, e)) + ',' + Math.round(mix(228, 232, e)) + ')';
     letters.forEach(function (l) { l.style.textShadow = sh; l.style.color = col; });
 
-    // 3. o sanduíche: EU SOU A / LUZ / do mundo.
+    // 3. o sanduíche: VOCÊS SÃO A / LUZ / DO MUNDO.
     var t1 = easeOut(range(q, 0.22, 0.38));
-    var o1 = easeInOut(range(q, 0.58, 0.68));
-    eb1.style.opacity = (t1 * (1 - o1)).toFixed(3);
-    eb1.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - t1) * 10 - o1 * 12).toFixed(1) + 'px,0)';
-    eb1.style.filter = (!reduced && o1 > 0.01) ? 'blur(' + (o1 * 5).toFixed(2) + 'px)' : '';
-
-    var t2 = easeOut(range(q, 0.66, 0.80));
-    eb2.style.opacity = t2.toFixed(3);
-    eb2.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - t2) * 12).toFixed(1) + 'px,0)';
+    eb.style.opacity = t1.toFixed(3);
+    eb.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - t1) * 10).toFixed(1) + 'px,0)';
 
     var tm = easeOut(range(q, 0.30, 0.46));
     mundo.style.opacity = tm.toFixed(3);
     mundo.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tm) * 10).toFixed(1) + 'px,0)';
 
-    var tr1 = easeOut(range(q, 0.40, 0.52));
-    var or1 = easeInOut(range(q, 0.64, 0.74));
-    rf1.style.opacity = (tr1 * (1 - or1)).toFixed(3);
-    rf1.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tr1) * 8 - or1 * 8).toFixed(1) + 'px,0)';
-
-    var tr2 = easeOut(range(q, 0.74, 0.86));
-    rf2.style.opacity = tr2.toFixed(3);
-    rf2.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tr2) * 8).toFixed(1) + 'px,0)';
+    var tr = easeOut(range(q, 0.40, 0.52));
+    rf.style.opacity = tr.toFixed(3);
+    rf.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tr) * 8).toFixed(1) + 'px,0)';
 
     // 4. ecos: a luz se reflete
     echoes.forEach(function (el) {
       var d = parseFloat(el.getAttribute('data-d'));
-      var t = easeOut(range(q, 0.62 + d, 0.88 + d));
+      var t = easeOut(range(q, 0.54 + d, 0.82 + d));
       var y = parseFloat(el.getAttribute('data-y')) * L.Fk;
       var s = parseFloat(el.getAttribute('data-s'));
       var o = parseFloat(el.getAttribute('data-o'));
@@ -937,7 +924,7 @@
     });
 
     // 5. fachos laterais: a luz se multiplica
-    var ts = easeOut(range(q, 0.64, 0.90));
+    var ts = easeOut(range(q, 0.56, 0.84));
     srays.forEach(function (r) {
       var o = parseFloat(r.getAttribute('data-o'));
       r.style.opacity = (o * ts).toFixed(3);
