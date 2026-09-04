@@ -303,21 +303,21 @@
   /* composição editorial: o versículo, abaixo de LUZ */
   .comp {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: 60%; /* ajustado por JS a partir da base de LUZ */
+    inset: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0 8vw;
+    justify-content: center;
+    padding: 0 6vw;
     text-align: center;
+    transform: translateY(-1.5vh);
   }
 
   .eyebrow {
     position: relative;
     width: 100%;
-    height: 1.5em;
-    margin-bottom: 3.5vw;
+    height: 1.3em;
+    margin-bottom: 2.2vw;
     font-size: clamp(13px, 4vw, 18px);
     font-weight: 400;
     letter-spacing: 0.34em;
@@ -334,7 +334,32 @@
     will-change: opacity, transform;
   }
 
+  .line {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .art {
+    font-style: italic;
+    font-weight: 300;
+    line-height: 1;
+    color: rgba(247, 240, 225, 0.92);
+    opacity: 0;
+    will-change: opacity, transform;
+  }
+  .slot {
+    display: inline-block;
+    visibility: hidden;
+    line-height: 1;
+    font-weight: 300;
+    letter-spacing: 0.28em;
+    margin-right: -0.22em;
+    text-transform: uppercase;
+  }
+
   .mundo {
+    margin-top: 1.5vw;
     font-style: italic;
     font-weight: 300;
     font-size: clamp(26px, 7.8vw, 38px);
@@ -348,7 +373,7 @@
     position: relative;
     width: 100%;
     height: 1.6em;
-    margin-top: 7vw;
+    margin-top: 6vw;
     font-size: 11.5px;
     font-weight: 400;
     letter-spacing: 0.36em;
@@ -409,15 +434,18 @@
     <i class="sray sray--down" data-x="-0.40" data-o="0.16"></i>
     <i class="sray sray--down" data-x="0.40"  data-o="0.16"></i>
 
-    <span class="echo" data-y="-1.55" data-s="0.84" data-o="0.075" data-d="0.04" style="--b:3px">LUZ</span>
-    <span class="echo" data-y="2.75"  data-s="0.80" data-o="0.07"  data-d="0"    style="--b:4px">LUZ</span>
+    <span class="echo" data-y="-2.0" data-s="0.84" data-o="0.075" data-d="0.04" style="--b:3px">LUZ</span>
+    <span class="echo" data-y="2.7"  data-s="0.80" data-o="0.07"  data-d="0"    style="--b:4px">LUZ</span>
 
     <div class="comp" id="comp">
       <div class="eyebrow">
         <span class="eb" id="eb1">Eu sou</span>
         <span class="eb" id="eb2">Vocês são</span>
       </div>
-      <div class="mundo" id="mundo">a luz do mundo.</div>
+      <div class="line">
+        <span class="art" id="art">a</span><span class="slot" id="slot">LUZ</span>
+      </div>
+      <div class="mundo" id="mundo">do mundo.</div>
       <div class="ref">
         <span class="rf" id="rf1">João 8:12</span>
         <span class="rf" id="rf2">Mateus 5:14</span>
@@ -658,7 +686,7 @@
 
   var verses = $('verses'), stage = $('vstage'), bloom = $('vbloom');
   var rayUp = $('vrayUp'), rayDown = $('vrayDown');
-  var eb1 = $('eb1'), eb2 = $('eb2'), comp = $('comp');
+  var eb1 = $('eb1'), eb2 = $('eb2'), art = $('art'), slot = $('slot');
   var mundo = $('mundo'), rf1 = $('rf1'), rf2 = $('rf2');
   var letters = Array.prototype.slice.call(stage.querySelectorAll('.vl'));
   var echoes  = Array.prototype.slice.call(stage.querySelectorAll('.echo'));
@@ -688,8 +716,14 @@
 
     var vw = window.innerWidth;
     var sr = stage.getBoundingClientRect();
-    var F = rects[0].height;            // corpo final de LUZ na abertura (mantido)
-    var rise = sr.height * 0.075;       // LUZ sobe um pouco para abrir espaço ao versículo
+    var F = rects[0].height;                          // corpo final de LUZ na abertura
+    var k = Math.min(1, (vw * 0.68) / block.width);   // LUZ continua grande, abre espaço ao artigo
+    var Fk = F * k;
+
+    slot.style.fontSize = Fk + 'px';
+    art.style.fontSize = (Fk * 0.42) + 'px';
+    art.style.marginRight = (Fk * 0.16) + 'px';
+    echoes.forEach(function (e) { e.style.fontSize = Fk + 'px'; e.style.transform = ''; });
 
     letters.forEach(function (l, i) {
       l.style.fontSize = F + 'px';
@@ -702,29 +736,28 @@
     rayUp.style.marginBottom = f.half + 'px';
     rayDown.style.marginTop = f.half + 'px';
 
-    var cx = block.left + block.width / 2;
-    var cy = block.top + block.height / 2 - rise;
-    var bottom = block.bottom - rise;
+    // alvo: o slot invisível no meio do sanduíche
+    var tr = slot.getBoundingClientRect();
+    var target = { left: tr.left - sr.left, top: tr.top - sr.top, width: tr.width, height: tr.height };
+    k = target.height / block.height;
 
-    // versículo nasce abaixo da base de LUZ
-    comp.style.top = (bottom + F * 0.26) + 'px';
+    var cx = target.left + target.width / 2;
+    var cy = target.top + target.height / 2;
 
     echoes.forEach(function (e) {
-      e.style.fontSize = F + 'px';
-      e.style.transform = '';
       var w = e.getBoundingClientRect().width;
       e.style.left = (cx - w / 2) + 'px';
-      e.style.top = (cy - F / 2) + 'px';
+      e.style.top = (cy - Fk / 2) + 'px';
     });
 
     srays.forEach(function (r) {
       var x = parseFloat(r.getAttribute('data-x')) * vw;
       r.style.left = (vw / 2 + x) + 'px';
-      if (r.classList.contains('sray--up')) r.style.bottom = (sr.height - (block.top - rise) + 26) + 'px';
-      else r.style.top = (bottom + 26) + 'px';
+      if (r.classList.contains('sray--up')) r.style.bottom = (sr.height - target.top + 26) + 'px';
+      else r.style.top = (target.top + target.height + 26) + 'px';
     });
 
-    L = { rects: rects, block: block, rise: rise, F: F, cx: cx, cy: cy, stageH: sr.height };
+    L = { rects: rects, block: block, k: k, target: target, F: F, Fk: Fk, cx: cx, cy: cy, stageH: sr.height };
     return true;
   }
 
@@ -764,11 +797,15 @@
   }
 
   function apply(q) {
-    // 1. LUZ permanece grande; apenas sobe um pouco
+    // 1. LUZ desliza da posição herdada para o meio do sanduíche
     var m = reduced ? 1 : easeInOut(range(q, 0.05, 0.30));
-    var dy = -L.rise * m;
-    letters.forEach(function (l) {
-      l.style.transform = 'translate3d(0,' + dy.toFixed(2) + 'px,0)';
+    var sc = mix(1, L.k, m);
+    letters.forEach(function (l, i) {
+      var r = L.rects[i];
+      var tx = L.target.left + (r.left - L.block.left) * L.k;
+      var ty = L.target.top  + (r.top  - L.block.top)  * L.k;
+      var dx = (tx - r.left) * m, dy = (ty - r.top) * m;
+      l.style.transform = 'translate3d(' + dx.toFixed(2) + 'px,' + dy.toFixed(2) + 'px,0) scale(' + sc.toFixed(4) + ')';
     });
 
     // fachos centrais da abertura se recolhem quando o texto chega
@@ -779,8 +816,8 @@
     // 2. expansão da luz (Mateus)
     var e = easeInOut(range(q, 0.60, 0.92));
 
-    var by = -L.rise * m;
-    var bs = 1 + 0.85 * e;
+    var by = (L.cy - L.stageH / 2) * m;
+    var bs = mix(1, 0.94, m) + 0.85 * e;
     bloom.style.transform = 'translate(-50%,-50%) translate3d(0,' + by.toFixed(1) + 'px,0) scale(' + bs.toFixed(3) + ')';
     bloom.style.opacity = (0.95 + 0.05 * e).toFixed(3);
 
@@ -788,7 +825,11 @@
     var col = 'rgb(' + Math.round(mix(250, 253, e)) + ',' + Math.round(mix(244, 247, e)) + ',' + Math.round(mix(228, 232, e)) + ')';
     letters.forEach(function (l) { l.style.textShadow = sh; l.style.color = col; });
 
-    // 3. o versículo, abaixo de LUZ
+    // 3. o sanduíche: EU SOU / a LUZ / do mundo.
+    var ta = easeOut(range(q, 0.20, 0.34));
+    art.style.opacity = ta.toFixed(3);
+    art.style.transform = reduced ? '' : 'translate3d(' + ((1 - ta) * -6).toFixed(1) + 'px,0,0)';
+
     var t1 = easeOut(range(q, 0.22, 0.38));
     var o1 = easeInOut(range(q, 0.58, 0.68));
     eb1.style.opacity = (t1 * (1 - o1)).toFixed(3);
@@ -816,7 +857,7 @@
     echoes.forEach(function (el) {
       var d = parseFloat(el.getAttribute('data-d'));
       var t = easeOut(range(q, 0.66 + d, 0.96 + d));
-      var y = parseFloat(el.getAttribute('data-y')) * L.F;
+      var y = parseFloat(el.getAttribute('data-y')) * L.Fk;
       var s = parseFloat(el.getAttribute('data-s'));
       var o = parseFloat(el.getAttribute('data-o'));
       var tt = reduced ? 1 : mix(0.62, 1, t);   // nasce já afastado e termina de se abrir
