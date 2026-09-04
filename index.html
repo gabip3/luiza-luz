@@ -145,20 +145,38 @@
   }
   .word.is-ready.is-resting { animation: breathe 7s ease-in-out 2.4s infinite; }
 
-  /* pista sutil de gesto: uma linha de um pixel */
+  /* pista de gesto: uma palavra e uma linha de um pixel */
   .cue {
     position: absolute;
     left: 50%;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh);
-    width: 1px;
-    height: 44px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 6vh);
     transform: translateX(-50%);
-    background: linear-gradient(to bottom, rgba(239,232,218,0) 0%, rgba(239,232,218,0.55) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
     opacity: 0;
     pointer-events: none;
     will-change: opacity;
+    transition: opacity 1.8s ease 2.8s;
   }
-  .cue::after {
+  .cue-txt {
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.42em;
+    text-indent: 0.42em;
+    text-transform: uppercase;
+    color: rgba(239, 232, 218, 0.62);
+    white-space: nowrap;
+  }
+  .cue-line {
+    position: relative;
+    display: block;
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(239,232,218,0) 0%, rgba(239,232,218,0.35) 100%);
+  }
+  .cue-line::after {
     content: "";
     position: absolute;
     left: 0; top: 0;
@@ -166,7 +184,7 @@
     background: var(--ivory);
     transform-origin: 50% 0;
     animation: cueSlide 2.8s cubic-bezier(.4,0,.2,1) infinite;
-    opacity: 0.6;
+    opacity: 0.75;
   }
   @keyframes cueSlide {
     0% { transform: scaleY(0); transform-origin: 50% 0; }
@@ -382,15 +400,62 @@
     will-change: opacity, transform;
   }
 
-  .tail {
-    height: 60vh;
-    height: 60svh;
+  .vfade {
+    position: absolute;
+    inset: 0;
     background: var(--black);
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
   }
+
+  /* ---------- Encerramento: LUIZA volta do preto ---------- */
+  .ending {
+    position: relative;
+    z-index: 3;
+    height: 320vh;
+    height: 320svh;
+    margin-top: -100vh;
+    margin-top: -100svh;
+    pointer-events: none;
+  }
+  .estage {
+    position: sticky;
+    top: 0;
+    height: var(--stage-h);
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: transparent;
+    visibility: hidden;
+  }
+  .estage.is-live {
+    background: var(--black);
+    visibility: visible;
+  }
+  .eword {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    will-change: opacity;
+  }
+  .el {
+    display: inline-block;
+    color: var(--ivory);
+    will-change: opacity, color;
+  }
+  .el:last-child { margin-right: -0.06em; }
 
   @media (prefers-reduced-motion: reduce) {
     .word.is-ready.is-resting { animation: none; }
-    .cue::after { animation: none; transform: scaleY(1); }
+    .cue-line::after { animation: none; transform: scaleY(1); }
     .word { transition-duration: 0.8s; }
   }
 </style>
@@ -411,7 +476,10 @@
       <span class="letter letter--hidden" data-hide data-dir="1">A</span>
     </div>
 
-    <div class="cue" id="cue"></div>
+    <div class="cue" id="cue">
+      <span class="cue-txt">deslize</span>
+      <i class="cue-line"></i>
+    </div>
   </div>
 </section>
 
@@ -447,10 +515,22 @@
     <span class="vl" aria-hidden="true">L</span>
     <span class="vl" aria-hidden="true">U</span>
     <span class="vl" aria-hidden="true">Z</span>
+
+    <div class="vfade" id="vfade"></div>
   </div>
 </section>
 
-<div class="tail"></div>
+<section class="ending" id="ending">
+  <div class="estage" id="estage">
+    <div class="eword" id="eword" aria-label="LUIZA">
+      <span class="el" data-luz>L</span>
+      <span class="el" data-luz>U</span>
+      <span class="el">I</span>
+      <span class="el" data-luz>Z</span>
+      <span class="el">A</span>
+    </div>
+  </div>
+</section>
 
 <script>
 (function () {
@@ -626,6 +706,8 @@
     current = target;
     apply(current);
     word.classList.add('is-ready');
+    // depois da entrada, a pista responde ao scroll sem atraso
+    setTimeout(function () { cue.style.transition = 'opacity 0.5s ease'; }, 5000);
   }
 
   var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
@@ -659,7 +741,8 @@
       rects: rects,
       color: cs.color,
       shadow: cs.textShadow,
-      half: parseFloat(rayUp.style.marginBottom) || 0
+      half: parseFloat(rayUp.style.marginBottom) || 0,
+      fontSize: layout.fontSize
     };
     apply(current);
     lastApplied = current;
@@ -676,7 +759,7 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var $ = function (id) { return document.getElementById(id); };
 
-  var verses = $('verses'), stage = $('vstage'), bloom = $('vbloom');
+  var verses = $('verses'), stage = $('vstage'), bloom = $('vbloom'), vfade = $('vfade');
   var rayUp = $('vrayUp'), rayDown = $('vrayDown');
   var eb1 = $('eb1'), eb2 = $('eb2'), slot = $('slot');
   var mundo = $('mundo'), rf1 = $('rf1'), rf2 = $('rf2');
@@ -804,7 +887,7 @@
     rayDown.style.opacity = (0.30 * rf).toFixed(3);
 
     // 2. expansão da luz (Mateus)
-    var e = easeInOut(range(q, 0.60, 0.92));
+    var e = easeInOut(range(q, 0.58, 0.86));
 
     var by = (L.cy - L.stageH / 2) * m;
     var bs = mix(1, 0.94, m) + 0.85 * e;
@@ -842,7 +925,7 @@
     // 4. ecos: a luz se reflete
     echoes.forEach(function (el) {
       var d = parseFloat(el.getAttribute('data-d'));
-      var t = easeOut(range(q, 0.66 + d, 0.96 + d));
+      var t = easeOut(range(q, 0.62 + d, 0.88 + d));
       var y = parseFloat(el.getAttribute('data-y')) * L.Fk;
       var s = parseFloat(el.getAttribute('data-s'));
       var o = parseFloat(el.getAttribute('data-o'));
@@ -852,12 +935,15 @@
     });
 
     // 5. fachos laterais: a luz se multiplica
-    var ts = easeOut(range(q, 0.68, 0.98));
+    var ts = easeOut(range(q, 0.64, 0.90));
     srays.forEach(function (r) {
       var o = parseFloat(r.getAttribute('data-o'));
       r.style.opacity = (o * ts).toFixed(3);
       r.style.transform = 'scaleY(' + (reduced ? 1 : ts).toFixed(3) + ')';
     });
+
+    // 6. tudo volta ao preto
+    vfade.style.opacity = easeInOut(range(q, 0.91, 1)).toFixed(3);
   }
 
   /* ---------- inicialização ---------- */
@@ -881,6 +967,97 @@
   function onResize() {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function () { init(); schedule(); }, 260);
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+  if (document.fonts) document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', onResize);
+})();
+</script>
+
+<script>
+/* ---------- Encerramento: LUIZA, com LUZ um fio mais clara ---------- */
+(function () {
+  'use strict';
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var ending = document.getElementById('ending');
+  var stage = document.getElementById('estage');
+  var word = document.getElementById('eword');
+  var letters = Array.prototype.slice.call(word.querySelectorAll('.el'));
+  var ready_ = false;
+
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function range(p, a, b) { return clamp01((p - a) / (b - a)); }
+  function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2; }
+  function mix(a, b, t) { return a + (b - a) * t; }
+
+  function measure() {
+    var f = window.__luzFinal && window.__luzFinal();
+    if (!f || !f.fontSize) return false;
+    word.style.fontSize = f.fontSize + 'px';
+    ready_ = true;
+    return true;
+  }
+
+  var target = 0, current = 0, raf = null, lastApplied = -1;
+
+  function readProgress() {
+    var r = ending.getBoundingClientRect();
+    var vh = window.innerHeight;
+    var travel = r.height - vh;
+    target = travel > 0 ? clamp01(-r.top / travel) : 0;
+    stage.classList.toggle('is-live', r.top <= 0);
+  }
+
+  function loop() {
+    var k = reduced ? 1 : 0.085;
+    current += (target - current) * k;
+    if (Math.abs(target - current) < 0.0005) current = target;
+    if (ready_ && current !== lastApplied) { apply(current); lastApplied = current; }
+    if (current !== target) raf = requestAnimationFrame(loop);
+    else raf = null;
+  }
+
+  function schedule() {
+    readProgress();
+    if (raf === null) raf = requestAnimationFrame(loop);
+  }
+
+  function apply(e) {
+    // LUIZA emerge do preto, devagar
+    word.style.opacity = easeInOut(range(e, 0.10, 0.55)).toFixed(3);
+
+    // depois, L U Z ganham um fio de luminosidade; I e A recuam um fio
+    var d = easeInOut(range(e, 0.55, 0.90));
+    letters.forEach(function (l) {
+      if (l.hasAttribute('data-luz')) {
+        l.style.color = 'rgb(' + Math.round(mix(239, 247, d)) + ',' + Math.round(mix(232, 241, d)) + ',' + Math.round(mix(218, 226, d)) + ')';
+        l.style.textShadow = d < 0.01 ? 'none' : '0 0 ' + (16 * d).toFixed(1) + 'px rgba(255,226,178,' + (0.12 * d).toFixed(3) + ')';
+      } else {
+        l.style.opacity = (1 - 0.16 * d).toFixed(3);
+      }
+    });
+  }
+
+  function init() {
+    if (!measure()) return;
+    lastApplied = -1;
+    readProgress();
+    current = target;
+    apply(current);
+    lastApplied = current;
+  }
+
+  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+  ready.then(function () { setTimeout(init, 0); });
+  setTimeout(function () { if (!ready_) init(); }, 2500);
+
+  window.addEventListener('scroll', schedule, { passive: true });
+
+  var resizeTimer = null;
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { init(); schedule(); }, 300);
   }
   window.addEventListener('resize', onResize);
   window.addEventListener('orientationchange', onResize);
