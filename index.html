@@ -411,12 +411,12 @@
     will-change: opacity;
   }
 
-  /* ---------- Encerramento: LUIZA volta do preto ---------- */
+  /* ---------- Encerramento: o resto do versículo ---------- */
   .ending {
     position: relative;
     z-index: 3;
-    height: 320vh;
-    height: 320svh;
+    height: 460vh;
+    height: 460svh;
     margin-top: -100vh;
     margin-top: -100svh;
     pointer-events: none;
@@ -436,24 +436,76 @@
     background: var(--black);
     visibility: visible;
   }
-  .eword {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    font-weight: 300;
-    line-height: 1;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    white-space: nowrap;
+  .ebloom {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 140vw;
+    height: 140vw;
+    max-width: 720px;
+    max-height: 720px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      rgba(var(--gold), 0.10) 0%,
+      rgba(var(--gold), 0.06) 16%,
+      rgba(var(--gold), 0.03) 32%,
+      rgba(var(--gold), 0.012) 48%,
+      rgba(0,0,0,0) 68%
+    );
     opacity: 0;
-    will-change: opacity;
+    pointer-events: none;
+    will-change: opacity, transform;
   }
-  .el {
-    display: inline-block;
+
+  .moment {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3.2vw;
+    padding: 0 8vw;
+    text-align: center;
+  }
+  .m-small {
+    font-size: clamp(13px, 4vw, 18px);
+    font-weight: 400;
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    text-transform: uppercase;
+    line-height: 1.5;
+    color: rgba(239, 232, 218, 0.84);
+    opacity: 0;
+    will-change: opacity, transform;
+  }
+  .m-big {
+    font-size: clamp(38px, 11.5vw, 64px);
+    font-weight: 300;
+    line-height: 1.05;
     color: var(--ivory);
-    will-change: opacity, color;
+    opacity: 0;
+    will-change: opacity, transform;
   }
-  .el:last-child { margin-right: -0.06em; }
+  .m-luz {
+    display: inline-block;
+    will-change: color, text-shadow;
+  }
+  .m-ref {
+    margin-top: 3vw;
+    font-size: 11.5px;
+    font-weight: 400;
+    letter-spacing: 0.36em;
+    text-indent: 0.36em;
+    text-transform: uppercase;
+    color: rgba(255, 226, 178, 0.55);
+    opacity: 0;
+    will-change: opacity, transform;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .word.is-ready.is-resting { animation: none; }
@@ -522,12 +574,19 @@
 
 <section class="ending" id="ending">
   <div class="estage" id="estage">
-    <div class="eword" id="eword" aria-label="LUIZA">
-      <span class="el" data-luz>L</span>
-      <span class="el" data-luz>U</span>
-      <span class="el">I</span>
-      <span class="el" data-luz>Z</span>
-      <span class="el">A</span>
+    <div class="ebloom" id="ebloom"></div>
+
+    <div class="moment" id="mA">
+      <div class="m-small">Não se pode esconder</div>
+      <div class="m-big">uma cidade</div>
+      <div class="m-small">construída<br>sobre um monte.</div>
+    </div>
+
+    <div class="moment" id="mB">
+      <div class="m-small" id="b1">Assim brilhe</div>
+      <div class="m-big" id="b2">a <span class="m-luz" id="bluz">luz</span> de vocês</div>
+      <div class="m-small" id="b3">diante dos homens.</div>
+      <div class="m-ref" id="b4">Mateus 5:16</div>
     </div>
   </div>
 </section>
@@ -964,28 +1023,26 @@
 </script>
 
 <script>
-/* ---------- Encerramento: LUIZA, com LUZ um fio mais clara ---------- */
+/* ---------- Encerramento: o resto do versículo (Mateus 5:14b–16) ---------- */
 (function () {
   'use strict';
 
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var ending = document.getElementById('ending');
-  var stage = document.getElementById('estage');
-  var word = document.getElementById('eword');
-  var letters = Array.prototype.slice.call(word.querySelectorAll('.el'));
-  var ready_ = false;
+  var $ = function (id) { return document.getElementById(id); };
+  var ending = $('ending'), stage = $('estage'), bloom = $('ebloom');
+  var mA = $('mA'), linesA = Array.prototype.slice.call(mA.children);
+  var b1 = $('b1'), b2 = $('b2'), b3 = $('b3'), b4 = $('b4'), bluz = $('bluz');
 
   function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
   function range(p, a, b) { return clamp01((p - a) / (b - a)); }
   function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2; }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
   function mix(a, b, t) { return a + (b - a) * t; }
 
-  function measure() {
-    var f = window.__luzFinal && window.__luzFinal();
-    if (!f || !f.fontSize) return false;
-    word.style.fontSize = f.fontSize + 'px';
-    ready_ = true;
-    return true;
+  function show(el, tin, tout) {
+    var o = tin * (1 - (tout || 0));
+    el.style.opacity = o.toFixed(3);
+    el.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tin) * 12 - (tout || 0) * 10).toFixed(1) + 'px,0)';
   }
 
   var target = 0, current = 0, raf = null, lastApplied = -1;
@@ -1002,7 +1059,7 @@
     var k = reduced ? 1 : 0.085;
     current += (target - current) * k;
     if (Math.abs(target - current) < 0.0005) current = target;
-    if (ready_ && current !== lastApplied) { apply(current); lastApplied = current; }
+    if (current !== lastApplied) { apply(current); lastApplied = current; }
     if (current !== target) raf = requestAnimationFrame(loop);
     else raf = null;
   }
@@ -1013,23 +1070,32 @@
   }
 
   function apply(e) {
-    // LUIZA emerge do preto, devagar
-    word.style.opacity = easeInOut(range(e, 0.10, 0.55)).toFixed(3);
-
-    // depois, L U Z ganham um fio de luminosidade; I e A recuam um fio
-    var d = easeInOut(range(e, 0.55, 0.90));
-    letters.forEach(function (l) {
-      if (l.hasAttribute('data-luz')) {
-        l.style.color = 'rgb(' + Math.round(mix(239, 247, d)) + ',' + Math.round(mix(232, 241, d)) + ',' + Math.round(mix(218, 226, d)) + ')';
-        l.style.textShadow = d < 0.01 ? 'none' : '0 0 ' + (16 * d).toFixed(1) + 'px rgba(255,226,178,' + (0.12 * d).toFixed(3) + ')';
-      } else {
-        l.style.opacity = (1 - 0.16 * d).toFixed(3);
-      }
+    // A: "Não se pode esconder / uma cidade / construída sobre um monte."
+    var outA = easeInOut(range(e, 0.40, 0.50));
+    linesA.forEach(function (el, i) {
+      var a = 0.06 + i * 0.05;
+      show(el, easeOut(range(e, a, a + 0.18)), outA);
     });
+
+    // B: "Assim brilhe / a luz de vocês / diante dos homens."
+    show(b1, easeOut(range(e, 0.56, 0.70)));
+    show(b2, easeOut(range(e, 0.60, 0.76)));
+    show(b3, easeOut(range(e, 0.66, 0.80)));
+    show(b4, easeOut(range(e, 0.74, 0.86)));
+
+    // a palavra "luz" recebe o mesmo brilho de LUZ
+    var g = easeOut(range(e, 0.78, 0.96));
+    bluz.style.color = 'rgb(' + Math.round(mix(239, 250, g)) + ',' + Math.round(mix(232, 244, g)) + ',' + Math.round(mix(218, 228, g)) + ')';
+    bluz.style.textShadow = g < 0.01 ? 'none' :
+      '0 0 ' + (4 * g).toFixed(1) + 'px rgba(255,246,226,' + (0.35 * g).toFixed(3) + '),' +
+      '0 0 ' + (18 * g).toFixed(1) + 'px rgba(255,232,190,' + (0.20 * g).toFixed(3) + '),' +
+      '0 0 ' + (56 * g).toFixed(1) + 'px rgba(255,220,160,' + (0.12 * g).toFixed(3) + ')';
+
+    bloom.style.opacity = (0.9 * g).toFixed(3);
+    bloom.style.transform = 'translate(-50%,-50%) scale(' + mix(0.8, 1.15, g).toFixed(3) + ')';
   }
 
   function init() {
-    if (!measure()) return;
     lastApplied = -1;
     readProgress();
     current = target;
@@ -1037,20 +1103,10 @@
     lastApplied = current;
   }
 
-  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-  ready.then(function () { setTimeout(init, 0); });
-  setTimeout(function () { if (!ready_) init(); }, 2500);
-
+  init();
   window.addEventListener('scroll', schedule, { passive: true });
-
-  var resizeTimer = null;
-  function onResize() {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(function () { init(); schedule(); }, 300);
-  }
-  window.addEventListener('resize', onResize);
-  window.addEventListener('orientationchange', onResize);
-  if (document.fonts) document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', onResize);
+  window.addEventListener('resize', schedule);
+  window.addEventListener('orientationchange', schedule);
 })();
 </script>
 </body>
