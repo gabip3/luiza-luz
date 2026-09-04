@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<title>LUIZA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #000;
+    --ivory: #efe8da;
+    --ivory-warm: #f7f0e1;
+    --gold: 255, 226, 178;
+    --stage-h: 100vh;
+    --stage-h: 100svh;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html {
+    background: var(--black);
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: auto;
+    overscroll-behavior-y: none;
+  }
+
+  body {
+    background: var(--black);
+    color: var(--ivory);
+    font-family: "Cormorant Garamond", "Cormorant", "Didot", "Bodoni MT", "Times New Roman", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+  }
+
+  /* ---------- Abertura: pista de scroll ---------- */
+  .scene {
+    position: relative;
+    height: 420vh;
+    height: 420svh;
+  }
+
+  .stage {
+    position: sticky;
+    top: 0;
+    height: var(--stage-h);
+    width: 100%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    background: var(--black);
+    perspective: 900px;
+    perspective-origin: 50% 50%;
+  }
+
+  /* bloom atrás da palavra */
+  .bloom {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 140vw;
+    height: 140vw;
+    max-width: 720px;
+    max-height: 720px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      rgba(var(--gold), 0.15) 0%,
+      rgba(var(--gold), 0.09) 14%,
+      rgba(var(--gold), 0.05) 28%,
+      rgba(var(--gold), 0.022) 42%,
+      rgba(var(--gold), 0.008) 56%,
+      rgba(0,0,0,0) 70%
+    );
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
+  }
+
+  /* fachos verticais, muito discretos */
+  .ray {
+    position: absolute;
+    left: 50%;
+    width: 1px;
+    height: 22vh;
+    height: 22svh;
+    transform: translateX(-50%) scaleY(0);
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
+  .ray--up {
+    bottom: 50%;
+    transform-origin: 50% 100%;
+    background: linear-gradient(to top, rgba(var(--gold), 0.55), rgba(var(--gold), 0));
+  }
+  .ray--down {
+    top: 50%;
+    transform-origin: 50% 0%;
+    background: linear-gradient(to bottom, rgba(var(--gold), 0.45), rgba(var(--gold), 0));
+  }
+
+  /* a palavra */
+  .word {
+    position: relative;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    font-weight: 300;
+    font-size: 24vw; /* ajustado por JS para nunca cortar */
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--ivory);
+    opacity: 0;
+    transform-style: preserve-3d;
+    transition: opacity 2.4s cubic-bezier(.2,.6,.2,1);
+  }
+  .word.is-ready { opacity: 1; }
+
+  .letter {
+    display: inline-block;
+    position: relative;
+    transform-origin: 50% 60%;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+  }
+  .letter--hidden { will-change: transform, opacity, filter; }
+  .letter:last-child { margin-right: -0.06em; } /* compensa tracking final */
+
+  /* respiração lenta em repouso */
+  @keyframes breathe {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.86; }
+  }
+  .word.is-ready.is-resting { animation: breathe 7s ease-in-out 2.4s infinite; }
+
+  /* pista sutil de gesto: uma linha de um pixel */
+  .cue {
+    position: absolute;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 7vh);
+    width: 1px;
+    height: 44px;
+    transform: translateX(-50%);
+    background: linear-gradient(to bottom, rgba(239,232,218,0) 0%, rgba(239,232,218,0.55) 100%);
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
+  }
+  .cue::after {
+    content: "";
+    position: absolute;
+    left: 0; top: 0;
+    width: 1px; height: 100%;
+    background: var(--ivory);
+    transform-origin: 50% 0;
+    animation: cueSlide 2.8s cubic-bezier(.4,0,.2,1) infinite;
+    opacity: 0.6;
+  }
+  @keyframes cueSlide {
+    0% { transform: scaleY(0); transform-origin: 50% 0; }
+    45% { transform: scaleY(1); transform-origin: 50% 0; }
+    46% { transform-origin: 50% 100%; }
+    100% { transform: scaleY(0); transform-origin: 50% 100%; }
+  }
+
+  /* ---------- Versículos: assume LUZ e compõe ao redor ---------- */
+  .verses {
+    position: relative;
+    z-index: 2;
+    height: 640vh;
+    height: 640svh;
+    margin-top: -100vh;
+    margin-top: -100svh;
+    pointer-events: none;
+  }
+
+  .vstage {
+    position: sticky;
+    top: 0;
+    height: var(--stage-h);
+    width: 100%;
+    overflow: hidden;
+    background: transparent;
+    visibility: hidden;
+  }
+  .vstage.is-live {
+    background: var(--black);
+    visibility: visible;
+  }
+
+  .vbloom {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 140vw;
+    height: 140vw;
+    max-width: 720px;
+    max-height: 720px;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      rgba(var(--gold), 0.15) 0%,
+      rgba(var(--gold), 0.09) 14%,
+      rgba(var(--gold), 0.05) 28%,
+      rgba(var(--gold), 0.022) 42%,
+      rgba(var(--gold), 0.008) 56%,
+      rgba(0,0,0,0) 70%
+    );
+    opacity: 0.95;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  .vray {
+    position: absolute;
+    left: 50%;
+    width: 1px;
+    height: 22vh;
+    height: 22svh;
+    transform: translateX(-50%) scaleY(1);
+    pointer-events: none;
+    will-change: opacity;
+  }
+  .vray--up {
+    bottom: 50%;
+    transform-origin: 50% 100%;
+    background: linear-gradient(to top, rgba(var(--gold), 0.55), rgba(var(--gold), 0));
+    opacity: 0.42;
+  }
+  .vray--down {
+    top: 50%;
+    transform-origin: 50% 0%;
+    background: linear-gradient(to bottom, rgba(var(--gold), 0.45), rgba(var(--gold), 0));
+    opacity: 0.30;
+  }
+
+  /* fachos laterais: a luz se multiplica */
+  .sray {
+    position: absolute;
+    width: 1px;
+    height: 30vh;
+    height: 30svh;
+    opacity: 0;
+    transform: scaleY(0);
+    pointer-events: none;
+    will-change: opacity, transform;
+  }
+  .sray--up {
+    transform-origin: 50% 100%;
+    background: linear-gradient(to top, rgba(var(--gold), 0.5), rgba(var(--gold), 0));
+  }
+  .sray--down {
+    transform-origin: 50% 0%;
+    background: linear-gradient(to bottom, rgba(var(--gold), 0.42), rgba(var(--gold), 0));
+  }
+
+  /* ecos de LUZ: reflexos */
+  .echo {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0.28em;
+    margin-right: -0.22em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: rgb(255, 238, 208);
+    opacity: 0;
+    filter: blur(var(--b, 3px));
+    transform-origin: 50% 50%;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  /* as três letras herdadas */
+  .vl {
+    position: absolute;
+    left: 0;
+    top: 0;
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transform-origin: 0 0;
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  /* composição editorial: o versículo, abaixo de LUZ */
+  .comp {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 60%; /* ajustado por JS a partir da base de LUZ */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 8vw;
+    text-align: center;
+  }
+
+  .eyebrow {
+    position: relative;
+    width: 100%;
+    height: 1.5em;
+    margin-bottom: 3.5vw;
+    font-size: clamp(13px, 4vw, 18px);
+    font-weight: 400;
+    letter-spacing: 0.34em;
+    text-indent: 0.34em;
+    text-transform: uppercase;
+    color: rgba(239, 232, 218, 0.84);
+  }
+  .eb {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    opacity: 0;
+    will-change: opacity, transform;
+  }
+
+  .mundo {
+    font-style: italic;
+    font-weight: 300;
+    font-size: clamp(26px, 7.8vw, 38px);
+    line-height: 1.15;
+    color: rgba(247, 240, 225, 0.92);
+    opacity: 0;
+    will-change: opacity, transform;
+  }
+
+  .ref {
+    position: relative;
+    width: 100%;
+    height: 1.6em;
+    margin-top: 7vw;
+    font-size: 11.5px;
+    font-weight: 400;
+    letter-spacing: 0.36em;
+    text-indent: 0.36em;
+    text-transform: uppercase;
+    color: rgba(255, 226, 178, 0.55);
+  }
+  .rf {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    opacity: 0;
+    will-change: opacity, transform;
+  }
+
+  .tail {
+    height: 60vh;
+    height: 60svh;
+    background: var(--black);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .word.is-ready.is-resting { animation: none; }
+    .cue::after { animation: none; transform: scaleY(1); }
+    .word { transition-duration: 0.8s; }
+  }
+</style>
+</head>
+<body>
+
+<section class="scene" id="scene">
+  <div class="stage" id="stage">
+    <div class="bloom" id="bloom"></div>
+    <div class="ray ray--up" id="rayUp"></div>
+    <div class="ray ray--down" id="rayDown"></div>
+
+    <div class="word is-resting" id="word" aria-label="LUIZA">
+      <span class="letter" data-keep>L</span>
+      <span class="letter" data-keep>U</span>
+      <span class="letter letter--hidden" data-hide data-dir="-1">I</span>
+      <span class="letter" data-keep>Z</span>
+      <span class="letter letter--hidden" data-hide data-dir="1">A</span>
+    </div>
+
+    <div class="cue" id="cue"></div>
+  </div>
+</section>
+
+<section class="verses" id="verses">
+  <div class="vstage" id="vstage">
+    <div class="vbloom" id="vbloom"></div>
+    <div class="vray vray--up" id="vrayUp"></div>
+    <div class="vray vray--down" id="vrayDown"></div>
+
+    <i class="sray sray--up"   data-x="-0.40" data-o="0.22"></i>
+    <i class="sray sray--up"   data-x="0.40"  data-o="0.22"></i>
+    <i class="sray sray--down" data-x="-0.40" data-o="0.16"></i>
+    <i class="sray sray--down" data-x="0.40"  data-o="0.16"></i>
+
+    <span class="echo" data-y="-1.55" data-s="0.84" data-o="0.075" data-d="0.04" style="--b:3px">LUZ</span>
+    <span class="echo" data-y="2.75"  data-s="0.80" data-o="0.07"  data-d="0"    style="--b:4px">LUZ</span>
+
+    <div class="comp" id="comp">
+      <div class="eyebrow">
+        <span class="eb" id="eb1">Eu sou</span>
+        <span class="eb" id="eb2">Vocês são</span>
+      </div>
+      <div class="mundo" id="mundo">a luz do mundo.</div>
+      <div class="ref">
+        <span class="rf" id="rf1">João 8:12</span>
+        <span class="rf" id="rf2">Mateus 5:14</span>
+      </div>
+    </div>
+
+    <span class="vl" aria-hidden="true">L</span>
+    <span class="vl" aria-hidden="true">U</span>
+    <span class="vl" aria-hidden="true">Z</span>
+  </div>
+</section>
+
+<div class="tail"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var scene   = document.getElementById('scene');
+  var word    = document.getElementById('word');
+  var bloom   = document.getElementById('bloom');
+  var rayUp   = document.getElementById('rayUp');
+  var rayDown = document.getElementById('rayDown');
+  var cue     = document.getElementById('cue');
+  var letters = Array.prototype.slice.call(word.querySelectorAll('.letter'));
+  var keep    = letters.filter(function (l) { return l.hasAttribute('data-keep'); });
+  var hide    = letters.filter(function (l) { return l.hasAttribute('data-hide'); });
+
+  /* ---------- utilidades ---------- */
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function range(p, a, b) { return clamp01((p - a) / (b - a)); }
+  function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2; }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function easeIn(t) { return t*t*t; }
+  function mix(a, b, t) { return a + (b - a) * t; }
+
+  /* ---------- medição / layout ---------- */
+  var layout = { fontSize: 0, dx: [], scaleEnd: 1, em: 0 };
+
+  function fitFontSize() {
+    var vw = window.innerWidth;
+    var maxW = vw * 0.88;               // margens laterais confortáveis
+    var fs = Math.min(vw * 0.26, 220);  // ponto de partida
+    word.style.fontSize = fs + 'px';
+    // zera transformações para medir
+    letters.forEach(function (l) { l.style.transform = ''; });
+    var w = word.getBoundingClientRect().width;
+    if (w > maxW) fs = fs * (maxW / w);
+    word.style.fontSize = fs + 'px';
+    layout.fontSize = fs;
+  }
+
+  function measure() {
+    fitFontSize();
+    letters.forEach(function (l) { l.style.transform = ''; });
+
+    var vw = window.innerWidth;
+    var fs = layout.fontSize;
+    var rects = keep.map(function (l) { return l.getBoundingClientRect(); });
+    var widths = rects.map(function (r) { return r.width; });
+    var centers = rects.map(function (r) { return r.left + r.width / 2; });
+
+    // LUZ final: mais tracking, ligeiramente maior, sempre dentro de 82vw
+    var gapEm = 0.22;
+    var sumW = widths.reduce(function (a, b) { return a + b; }, 0);
+    var totalAt1 = sumW + gapEm * fs * (keep.length - 1);
+    var s = Math.min(1.34, (vw * 0.82) / totalAt1);
+    var total = totalAt1 * s;
+    var x = vw / 2 - total / 2;
+
+    layout.dx = keep.map(function (l, i) {
+      var cx = x + (widths[i] * s) / 2;
+      var dx = cx - centers[i];
+      x += widths[i] * s + gapEm * fs * s;
+      return dx;
+    });
+    layout.scaleEnd = s;
+    layout.em = fs;
+
+    // fachos nascem acima e abaixo da palavra, nunca sobre as letras
+    var half = (fs * 0.72 * s) / 2 + 28;
+    rayUp.style.marginBottom = half + 'px';
+    rayDown.style.marginTop = half + 'px';
+  }
+
+  /* ---------- progresso de scroll ---------- */
+  var target = 0, current = 0, raf = null, lastApplied = -1;
+
+  function readProgress() {
+    var r = scene.getBoundingClientRect();
+    var vh = window.innerHeight;
+    var travel = r.height - vh;
+    target = travel > 0 ? clamp01(-r.top / travel) : 0;
+  }
+
+  function loop() {
+    var k = reduced ? 1 : 0.085;                // suavização
+    current += (target - current) * k;
+    if (Math.abs(target - current) < 0.0005) current = target;
+    if (current !== lastApplied) { apply(current); lastApplied = current; }
+    if (current !== target) raf = requestAnimationFrame(loop);
+    else raf = null;
+  }
+
+  function schedule() {
+    readProgress();
+    if (raf === null) raf = requestAnimationFrame(loop);
+  }
+
+  /* ---------- coreografia ---------- */
+  function apply(p) {
+    var em = layout.em;
+
+    // repouso / pista
+    word.classList.toggle('is-resting', p < 0.02);
+    cue.style.opacity = (1 - range(p, 0, 0.06)) * 0.9;
+
+    // I e A recuam para a escuridão
+    hide.forEach(function (l, i) {
+      var dir = parseFloat(l.getAttribute('data-dir'));
+      var a = i === 0 ? 0.10 : 0.16;
+      var t = easeInOut(range(p, a, a + 0.36));
+      var op = 1 - easeInOut(range(p, a + 0.02, a + 0.30));
+      if (reduced) {
+        l.style.transform = '';
+        l.style.filter = '';
+        l.style.opacity = op;
+        return;
+      }
+      var y = dir * em * 0.22 * t;
+      var z = -520 * t;
+      var sc = mix(1, 0.86, t);
+      var blur = 16 * easeIn(t);
+      l.style.transform = 'translate3d(0,' + y.toFixed(2) + 'px,' + z.toFixed(1) + 'px) scale(' + sc.toFixed(4) + ')';
+      l.style.filter = blur > 0.15 ? 'blur(' + blur.toFixed(2) + 'px)' : '';
+      l.style.opacity = op.toFixed(3);
+    });
+
+    // L U Z se aproximam e crescem
+    var g = easeInOut(range(p, 0.30, 0.78));
+    var s = mix(1, layout.scaleEnd, g);
+    keep.forEach(function (l, i) {
+      if (reduced) {
+        // sem deslocamento: só um leve ganho de escala
+        l.style.transform = 'scale(' + s.toFixed(4) + ')';
+        return;
+      }
+      var dx = layout.dx[i] * g;
+      var dz = 40 * g;
+      l.style.transform = 'translate3d(' + dx.toFixed(2) + 'px,0,' + dz.toFixed(1) + 'px) scale(' + s.toFixed(4) + ')';
+    });
+
+    // LUZ passa a iluminar
+    var lt = easeOut(range(p, 0.60, 0.92));
+    var warm = lt;
+    var col = 'rgb(' +
+      Math.round(mix(239, 250, warm)) + ',' +
+      Math.round(mix(232, 244, warm)) + ',' +
+      Math.round(mix(218, 228, warm)) + ')';
+    var shadow = lt < 0.01 ? 'none' :
+      '0 0 ' + (6 * lt).toFixed(1) + 'px rgba(255,246,226,' + (0.42 * lt).toFixed(3) + '),' +
+      '0 0 ' + (28 * lt).toFixed(1) + 'px rgba(255,232,190,' + (0.22 * lt).toFixed(3) + '),' +
+      '0 0 ' + (90 * lt).toFixed(1) + 'px rgba(255,220,160,' + (0.14 * lt).toFixed(3) + ')';
+    keep.forEach(function (l) {
+      l.style.color = col;
+      l.style.textShadow = shadow;
+    });
+
+    bloom.style.opacity = (0.95 * lt).toFixed(3);
+
+    var rt = easeOut(range(p, 0.72, 1));
+    var rayT = reduced ? 'translateX(-50%) scaleY(1)' : 'translateX(-50%) scaleY(' + rt.toFixed(3) + ')';
+    rayUp.style.opacity   = (0.42 * rt).toFixed(3);
+    rayDown.style.opacity = (0.30 * rt).toFixed(3);
+    rayUp.style.transform = rayT;
+    rayDown.style.transform = rayT;
+  }
+
+  /* ---------- inicialização ---------- */
+  function init() {
+    measure();
+    lastApplied = -1;
+    readProgress();
+    current = target;
+    apply(current);
+    word.classList.add('is-ready');
+  }
+
+  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+  ready.then(init);
+  // segurança: se a fonte demorar, mostra assim mesmo
+  setTimeout(function () { if (!word.classList.contains('is-ready')) init(); }, 2200);
+
+  window.addEventListener('scroll', schedule, { passive: true });
+
+  var resizeTimer = null;
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { measure(); lastApplied = -1; schedule(); }, 120);
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+  if (document.fonts) document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', onResize);
+
+  /* geometria final de LUZ (p = 1), para a continuação assumir a palavra sem corte */
+  window.__luzFinal = function () {
+    if (!layout.em) return null;
+    var stageEl = document.getElementById('stage');
+    apply(1);
+    var sr = stageEl.getBoundingClientRect();
+    var rects = keep.map(function (l) {
+      var r = l.getBoundingClientRect();
+      return { left: r.left - sr.left, top: r.top - sr.top, width: r.width, height: r.height };
+    });
+    var cs = getComputedStyle(keep[0]);
+    var out = {
+      rects: rects,
+      color: cs.color,
+      shadow: cs.textShadow,
+      half: parseFloat(rayUp.style.marginBottom) || 0
+    };
+    apply(current);
+    lastApplied = current;
+    return out;
+  };
+})();
+</script>
+
+<script>
+/* ---------- Continuação: João 8:12 → Mateus 5:14 ---------- */
+(function () {
+  'use strict';
+
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function (id) { return document.getElementById(id); };
+
+  var verses = $('verses'), stage = $('vstage'), bloom = $('vbloom');
+  var rayUp = $('vrayUp'), rayDown = $('vrayDown');
+  var eb1 = $('eb1'), eb2 = $('eb2'), comp = $('comp');
+  var mundo = $('mundo'), rf1 = $('rf1'), rf2 = $('rf2');
+  var letters = Array.prototype.slice.call(stage.querySelectorAll('.vl'));
+  var echoes  = Array.prototype.slice.call(stage.querySelectorAll('.echo'));
+  var srays   = Array.prototype.slice.call(stage.querySelectorAll('.sray'));
+
+  function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function range(p, a, b) { return clamp01((p - a) / (b - a)); }
+  function easeInOut(t) { return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2; }
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function mix(a, b, t) { return a + (b - a) * t; }
+
+  var L = null;
+
+  function measure() {
+    var f = window.__luzFinal && window.__luzFinal();
+    if (!f) return false;
+
+    var rects = f.rects;
+    var block = {
+      left: Math.min.apply(null, rects.map(function (r) { return r.left; })),
+      top:  Math.min.apply(null, rects.map(function (r) { return r.top; })),
+      right: Math.max.apply(null, rects.map(function (r) { return r.left + r.width; })),
+      bottom: Math.max.apply(null, rects.map(function (r) { return r.top + r.height; }))
+    };
+    block.width = block.right - block.left;
+    block.height = block.bottom - block.top;
+
+    var vw = window.innerWidth;
+    var sr = stage.getBoundingClientRect();
+    var F = rects[0].height;            // corpo final de LUZ na abertura (mantido)
+    var rise = sr.height * 0.075;       // LUZ sobe um pouco para abrir espaço ao versículo
+
+    letters.forEach(function (l, i) {
+      l.style.fontSize = F + 'px';
+      l.style.left = rects[i].left + 'px';
+      l.style.top = rects[i].top + 'px';
+      l.style.color = f.color;
+      l.style.textShadow = f.shadow;
+      l.style.transform = '';
+    });
+    rayUp.style.marginBottom = f.half + 'px';
+    rayDown.style.marginTop = f.half + 'px';
+
+    var cx = block.left + block.width / 2;
+    var cy = block.top + block.height / 2 - rise;
+    var bottom = block.bottom - rise;
+
+    // versículo nasce abaixo da base de LUZ
+    comp.style.top = (bottom + F * 0.26) + 'px';
+
+    echoes.forEach(function (e) {
+      e.style.fontSize = F + 'px';
+      e.style.transform = '';
+      var w = e.getBoundingClientRect().width;
+      e.style.left = (cx - w / 2) + 'px';
+      e.style.top = (cy - F / 2) + 'px';
+    });
+
+    srays.forEach(function (r) {
+      var x = parseFloat(r.getAttribute('data-x')) * vw;
+      r.style.left = (vw / 2 + x) + 'px';
+      if (r.classList.contains('sray--up')) r.style.bottom = (sr.height - (block.top - rise) + 26) + 'px';
+      else r.style.top = (bottom + 26) + 'px';
+    });
+
+    L = { rects: rects, block: block, rise: rise, F: F, cx: cx, cy: cy, stageH: sr.height };
+    return true;
+  }
+
+  /* ---------- progresso ---------- */
+  var target = 0, current = 0, raf = null, lastApplied = -1, live = false;
+
+  function readProgress() {
+    var r = verses.getBoundingClientRect();
+    var vh = window.innerHeight;
+    var travel = r.height - vh;
+    target = travel > 0 ? clamp01(-r.top / travel) : 0;
+    live = r.top <= 0;
+    stage.classList.toggle('is-live', live);
+  }
+
+  function loop() {
+    var kk = reduced ? 1 : 0.085;
+    current += (target - current) * kk;
+    if (Math.abs(target - current) < 0.0005) current = target;
+    if (L && current !== lastApplied) { apply(current); lastApplied = current; }
+    if (current !== target) raf = requestAnimationFrame(loop);
+    else raf = null;
+  }
+
+  function schedule() {
+    readProgress();
+    if (raf === null) raf = requestAnimationFrame(loop);
+  }
+
+  /* ---------- coreografia ---------- */
+  function glow(e) {
+    // mesmo brilho da abertura, expandindo com e (0..1)
+    var r = 1 + 0.7 * e, a = 1 + 0.35 * e;
+    return '0 0 ' + (6 * r).toFixed(1) + 'px rgba(255,246,226,' + Math.min(1, 0.42 * a).toFixed(3) + '),' +
+           '0 0 ' + (28 * r).toFixed(1) + 'px rgba(255,232,190,' + (0.22 * a).toFixed(3) + '),' +
+           '0 0 ' + (90 * r).toFixed(1) + 'px rgba(255,220,160,' + (0.14 * a).toFixed(3) + ')';
+  }
+
+  function apply(q) {
+    // 1. LUZ permanece grande; apenas sobe um pouco
+    var m = reduced ? 1 : easeInOut(range(q, 0.05, 0.30));
+    var dy = -L.rise * m;
+    letters.forEach(function (l) {
+      l.style.transform = 'translate3d(0,' + dy.toFixed(2) + 'px,0)';
+    });
+
+    // fachos centrais da abertura se recolhem quando o texto chega
+    var rf = 1 - easeOut(range(q, 0.05, 0.24));
+    rayUp.style.opacity = (0.42 * rf).toFixed(3);
+    rayDown.style.opacity = (0.30 * rf).toFixed(3);
+
+    // 2. expansão da luz (Mateus)
+    var e = easeInOut(range(q, 0.60, 0.92));
+
+    var by = -L.rise * m;
+    var bs = 1 + 0.85 * e;
+    bloom.style.transform = 'translate(-50%,-50%) translate3d(0,' + by.toFixed(1) + 'px,0) scale(' + bs.toFixed(3) + ')';
+    bloom.style.opacity = (0.95 + 0.05 * e).toFixed(3);
+
+    var sh = glow(e);
+    var col = 'rgb(' + Math.round(mix(250, 253, e)) + ',' + Math.round(mix(244, 247, e)) + ',' + Math.round(mix(228, 232, e)) + ')';
+    letters.forEach(function (l) { l.style.textShadow = sh; l.style.color = col; });
+
+    // 3. o versículo, abaixo de LUZ
+    var t1 = easeOut(range(q, 0.22, 0.38));
+    var o1 = easeInOut(range(q, 0.58, 0.68));
+    eb1.style.opacity = (t1 * (1 - o1)).toFixed(3);
+    eb1.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - t1) * 10 - o1 * 12).toFixed(1) + 'px,0)';
+    eb1.style.filter = (!reduced && o1 > 0.01) ? 'blur(' + (o1 * 5).toFixed(2) + 'px)' : '';
+
+    var t2 = easeOut(range(q, 0.66, 0.80));
+    eb2.style.opacity = t2.toFixed(3);
+    eb2.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - t2) * 12).toFixed(1) + 'px,0)';
+
+    var tm = easeOut(range(q, 0.30, 0.46));
+    mundo.style.opacity = tm.toFixed(3);
+    mundo.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tm) * 10).toFixed(1) + 'px,0)';
+
+    var tr1 = easeOut(range(q, 0.40, 0.52));
+    var or1 = easeInOut(range(q, 0.64, 0.74));
+    rf1.style.opacity = (tr1 * (1 - or1)).toFixed(3);
+    rf1.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tr1) * 8 - or1 * 8).toFixed(1) + 'px,0)';
+
+    var tr2 = easeOut(range(q, 0.74, 0.86));
+    rf2.style.opacity = tr2.toFixed(3);
+    rf2.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tr2) * 8).toFixed(1) + 'px,0)';
+
+    // 4. ecos: a luz se reflete
+    echoes.forEach(function (el) {
+      var d = parseFloat(el.getAttribute('data-d'));
+      var t = easeOut(range(q, 0.66 + d, 0.96 + d));
+      var y = parseFloat(el.getAttribute('data-y')) * L.F;
+      var s = parseFloat(el.getAttribute('data-s'));
+      var o = parseFloat(el.getAttribute('data-o'));
+      var tt = reduced ? 1 : mix(0.62, 1, t);   // nasce já afastado e termina de se abrir
+      el.style.opacity = (o * t).toFixed(3);
+      el.style.transform = 'translate3d(0,' + (y * tt).toFixed(1) + 'px,0) scale(' + mix(1, s, tt).toFixed(3) + ')';
+    });
+
+    // 5. fachos laterais: a luz se multiplica
+    var ts = easeOut(range(q, 0.68, 0.98));
+    srays.forEach(function (r) {
+      var o = parseFloat(r.getAttribute('data-o'));
+      r.style.opacity = (o * ts).toFixed(3);
+      r.style.transform = 'scaleY(' + (reduced ? 1 : ts).toFixed(3) + ')';
+    });
+  }
+
+  /* ---------- inicialização ---------- */
+  function init() {
+    if (!measure()) return false;
+    lastApplied = -1;
+    readProgress();
+    current = target;
+    apply(current);
+    lastApplied = current;
+    return true;
+  }
+
+  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+  ready.then(function () { setTimeout(init, 0); });
+  setTimeout(function () { if (!L) init(); }, 2400);
+
+  window.addEventListener('scroll', schedule, { passive: true });
+
+  var resizeTimer = null;
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () { init(); schedule(); }, 260);
+  }
+  window.addEventListener('resize', onResize);
+  window.addEventListener('orientationchange', onResize);
+  if (document.fonts) document.fonts.addEventListener && document.fonts.addEventListener('loadingdone', onResize);
+})();
+</script>
+</body>
+</html>
