@@ -15,6 +15,10 @@
     --ivory: #efe8da;
     --ivory-warm: #f7f0e1;
     --gold: 255, 226, 178;
+    --paper: #f6f2ea;
+    --ink: #1c1814;
+    --ink-soft: rgba(28, 24, 20, 0.8);
+    --gold-ink: rgb(172, 134, 70);
     --stage-h: 100vh;
     --stage-h: 100svh;
   }
@@ -217,6 +221,30 @@
     background: var(--black);
     visibility: visible;
   }
+  .vstage.is-light { background: var(--paper); }
+
+  /* amanhecer: a luz toma a tela */
+  .dawn {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 200vmax;
+    height: 200vmax;
+    margin: -100vmax 0 0 -100vmax;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle at center,
+      rgba(246, 242, 234, 1) 0%,
+      rgba(246, 242, 234, 1) 28%,
+      rgba(250, 240, 220, 0.85) 40%,
+      rgba(255, 236, 200, 0.5) 52%,
+      rgba(255, 230, 186, 0.18) 63%,
+      rgba(255, 226, 178, 0) 74%
+    );
+    transform: scale(0);
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
 
   .vbloom {
     position: absolute;
@@ -265,45 +293,6 @@
     opacity: 0.30;
   }
 
-  /* fachos laterais: a luz se multiplica */
-  .sray {
-    position: absolute;
-    width: 1px;
-    height: 30vh;
-    height: 30svh;
-    opacity: 0;
-    transform: scaleY(0);
-    pointer-events: none;
-    will-change: opacity, transform;
-  }
-  .sray--up {
-    transform-origin: 50% 100%;
-    background: linear-gradient(to top, rgba(var(--gold), 0.5), rgba(var(--gold), 0));
-  }
-  .sray--down {
-    transform-origin: 50% 0%;
-    background: linear-gradient(to bottom, rgba(var(--gold), 0.42), rgba(var(--gold), 0));
-  }
-
-  /* ecos de LUZ: reflexos */
-  .echo {
-    position: absolute;
-    left: 0;
-    top: 0;
-    font-weight: 300;
-    line-height: 1;
-    letter-spacing: 0.28em;
-    margin-right: -0.22em;
-    text-transform: uppercase;
-    white-space: nowrap;
-    color: rgb(255, 238, 208);
-    opacity: 0;
-    filter: blur(var(--b, 3px));
-    transform-origin: 50% 50%;
-    pointer-events: none;
-    will-change: transform, opacity;
-  }
-
   /* as três letras herdadas */
   .vl {
     position: absolute;
@@ -341,7 +330,7 @@
     letter-spacing: 0.34em;
     text-indent: 0.34em;
     text-transform: uppercase;
-    color: rgba(239, 232, 218, 0.84);
+    color: var(--ink-soft);
   }
   .eb {
     position: absolute;
@@ -376,7 +365,7 @@
     letter-spacing: 0.34em;
     text-indent: 0.34em;
     text-transform: uppercase;
-    color: rgba(239, 232, 218, 0.84);
+    color: var(--ink-soft);
     opacity: 0;
     will-change: opacity, transform;
   }
@@ -391,7 +380,7 @@
     letter-spacing: 0.36em;
     text-indent: 0.36em;
     text-transform: uppercase;
-    color: rgba(255, 226, 178, 0.55);
+    color: var(--gold-ink);
   }
   .rf {
     position: absolute;
@@ -405,7 +394,7 @@
   .vfade {
     position: absolute;
     inset: 0;
-    background: var(--black);
+    background: var(--paper);
     opacity: 0;
     pointer-events: none;
     will-change: opacity;
@@ -433,7 +422,7 @@
     visibility: hidden;
   }
   .estage.is-live {
-    background: var(--black);
+    background: var(--paper);
     visibility: visible;
   }
   .ebloom {
@@ -448,11 +437,11 @@
     border-radius: 50%;
     background: radial-gradient(
       circle at center,
-      rgba(var(--gold), 0.10) 0%,
-      rgba(var(--gold), 0.06) 16%,
-      rgba(var(--gold), 0.03) 32%,
-      rgba(var(--gold), 0.012) 48%,
-      rgba(0,0,0,0) 68%
+      rgba(255, 214, 150, 0.22) 0%,
+      rgba(255, 214, 150, 0.14) 16%,
+      rgba(255, 214, 150, 0.07) 32%,
+      rgba(255, 214, 150, 0.025) 48%,
+      rgba(255, 214, 150, 0) 68%
     );
     opacity: 0;
     pointer-events: none;
@@ -479,7 +468,7 @@
     text-indent: 0.34em;
     text-transform: uppercase;
     line-height: 1.5;
-    color: rgba(239, 232, 218, 0.84);
+    color: var(--ink-soft);
     opacity: 0;
     will-change: opacity, transform;
   }
@@ -487,7 +476,7 @@
     font-size: clamp(38px, 11.5vw, 64px);
     font-weight: 300;
     line-height: 1.05;
-    color: var(--ivory);
+    color: var(--ink);
     opacity: 0;
     will-change: opacity, transform;
   }
@@ -502,7 +491,7 @@
     letter-spacing: 0.36em;
     text-indent: 0.36em;
     text-transform: uppercase;
-    color: rgba(255, 226, 178, 0.55);
+    color: var(--gold-ink);
     opacity: 0;
     will-change: opacity, transform;
   }
@@ -539,17 +528,10 @@
 
 <section class="verses" id="verses">
   <div class="vstage" id="vstage">
+    <div class="dawn" id="dawn"></div>
     <div class="vbloom" id="vbloom"></div>
     <div class="vray vray--up" id="vrayUp"></div>
     <div class="vray vray--down" id="vrayDown"></div>
-
-    <i class="sray sray--up"   data-x="-0.40" data-o="0.22"></i>
-    <i class="sray sray--up"   data-x="0.40"  data-o="0.22"></i>
-    <i class="sray sray--down" data-x="-0.40" data-o="0.16"></i>
-    <i class="sray sray--down" data-x="0.40"  data-o="0.16"></i>
-
-    <span class="echo" data-y="-2.0" data-s="0.84" data-o="0.075" data-d="0.04" style="--b:3px">LUZ</span>
-    <span class="echo" data-y="2.7"  data-s="0.80" data-o="0.07"  data-d="0"    style="--b:4px">LUZ</span>
 
     <div class="comp" id="comp">
       <div class="eyebrow">
@@ -818,13 +800,17 @@
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var $ = function (id) { return document.getElementById(id); };
 
-  var verses = $('verses'), stage = $('vstage'), bloom = $('vbloom'), vfade = $('vfade');
+  var verses = $('verses'), stage = $('vstage'), bloom = $('vbloom'), vfade = $('vfade'), dawn = $('dawn');
   var rayUp = $('vrayUp'), rayDown = $('vrayDown');
   var eb = $('eb'), slot = $('slot');
   var mundo = $('mundo'), rf = $('rf');
   var letters = Array.prototype.slice.call(stage.querySelectorAll('.vl'));
-  var echoes  = Array.prototype.slice.call(stage.querySelectorAll('.echo'));
-  var srays   = Array.prototype.slice.call(stage.querySelectorAll('.sray'));
+
+  var IVORY = [250, 244, 228], WHITE = [255, 255, 255], PAPER = [246, 242, 234],
+      INK = [28, 24, 20], GOLD = [184, 146, 82];
+  function rgb(a, b, t) {
+    return 'rgb(' + Math.round(a[0] + (b[0] - a[0]) * t) + ',' + Math.round(a[1] + (b[1] - a[1]) * t) + ',' + Math.round(a[2] + (b[2] - a[2]) * t) + ')';
+  }
 
   function clamp01(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
   function range(p, a, b) { return clamp01((p - a) / (b - a)); }
@@ -855,7 +841,6 @@
     var Fk = F * k;
 
     slot.style.fontSize = Fk + 'px';
-    echoes.forEach(function (e) { e.style.fontSize = Fk + 'px'; e.style.transform = ''; });
 
     letters.forEach(function (l, i) {
       l.style.fontSize = F + 'px';
@@ -875,19 +860,6 @@
 
     var cx = target.left + target.width / 2;
     var cy = target.top + target.height / 2;
-
-    echoes.forEach(function (e) {
-      var w = e.getBoundingClientRect().width;
-      e.style.left = (cx - w / 2) + 'px';
-      e.style.top = (cy - Fk / 2) + 'px';
-    });
-
-    srays.forEach(function (r) {
-      var x = parseFloat(r.getAttribute('data-x')) * vw;
-      r.style.left = (vw / 2 + x) + 'px';
-      if (r.classList.contains('sray--up')) r.style.bottom = (sr.height - target.top + 26) + 'px';
-      else r.style.top = (target.top + target.height + 26) + 'px';
-    });
 
     L = { rects: rects, block: block, k: k, target: target, F: F, Fk: Fk, cx: cx, cy: cy, stageH: sr.height };
     return true;
@@ -920,12 +892,11 @@
   }
 
   /* ---------- coreografia ---------- */
-  function glow(e) {
-    // mesmo brilho da abertura, expandindo com e (0..1)
-    var r = 1 + 0.7 * e, a = 1 + 0.35 * e;
+  function glow(r, a) {
+    // brilho da abertura, com multiplicadores de raio e de intensidade
     return '0 0 ' + (6 * r).toFixed(1) + 'px rgba(255,246,226,' + Math.min(1, 0.42 * a).toFixed(3) + '),' +
-           '0 0 ' + (28 * r).toFixed(1) + 'px rgba(255,232,190,' + (0.22 * a).toFixed(3) + '),' +
-           '0 0 ' + (90 * r).toFixed(1) + 'px rgba(255,220,160,' + (0.14 * a).toFixed(3) + ')';
+           '0 0 ' + (28 * r).toFixed(1) + 'px rgba(255,232,190,' + Math.min(1, 0.22 * a).toFixed(3) + '),' +
+           '0 0 ' + (90 * r).toFixed(1) + 'px rgba(255,220,160,' + Math.min(1, 0.14 * a).toFixed(3) + ')';
   }
 
   function apply(q) {
@@ -940,57 +911,63 @@
       l.style.transform = 'translate3d(' + dx.toFixed(2) + 'px,' + dy.toFixed(2) + 'px,0) scale(' + sc.toFixed(4) + ')';
     });
 
-    // fachos centrais da abertura se recolhem quando o texto chega
-    var rc = 1 - easeOut(range(q, 0.05, 0.24));
+    // fachos centrais da abertura se recolhem
+    var rc = 1 - easeOut(range(q, 0.05, 0.22));
     rayUp.style.opacity = (0.42 * rc).toFixed(3);
     rayDown.style.opacity = (0.30 * rc).toFixed(3);
 
-    // 2. a luz se expande e se reflete
-    var e = easeInOut(range(q, 0.50, 0.80));
+    // 2. amanhecer: a luz toma a tela
+    var dt = easeInOut(range(q, 0.06, 0.32));
+    if (reduced) {
+      dawn.style.transform = 'scale(2.3)';
+      dawn.style.opacity = dt.toFixed(3);
+    } else {
+      dawn.style.transform = 'scale(' + (2.3 * dt).toFixed(4) + ')';
+    }
+    stage.classList.toggle('is-light', q >= 0.32);
 
+    // calor atrás de LUZ (sobre o preto é o brilho; sobre o branco, uma mancha quente)
+    var e = easeInOut(range(q, 0.66, 0.88));
     var by = (L.cy - L.stageH / 2) * m;
-    var bs = mix(1, 0.94, m) + 0.85 * e;
+    var bs = mix(1, 0.94, m) + 0.5 * e;
     bloom.style.transform = 'translate(-50%,-50%) translate3d(0,' + by.toFixed(1) + 'px,0) scale(' + bs.toFixed(3) + ')';
-    bloom.style.opacity = (0.95 + 0.05 * e).toFixed(3);
+    bloom.style.opacity = (0.95 - 0.65 * dt + 0.25 * e).toFixed(3);
 
-    var sh = glow(e);
-    var col = 'rgb(' + Math.round(mix(250, 253, e)) + ',' + Math.round(mix(244, 247, e)) + ',' + Math.round(mix(228, 232, e)) + ')';
+    // as letras: viram luz, somem na luz, voltam em tinta e depois esquentam
+    var col, sh;
+    if (q < 0.22) {
+      var t = easeOut(range(q, 0.05, 0.22));
+      col = rgb(IVORY, WHITE, t);
+      sh = glow(1 + 1.2 * t, 1 + 0.9 * t);
+    } else if (q < 0.30) {
+      var t2 = easeInOut(range(q, 0.22, 0.30));
+      col = rgb(WHITE, PAPER, t2);
+      sh = glow(2.2, 1.9 * (1 - t2));
+    } else if (q < 0.36) {
+      col = rgb(PAPER, PAPER, 0);
+      sh = 'none';
+    } else {
+      var t3 = easeOut(range(q, 0.36, 0.52));
+      col = rgb(PAPER, INK, t3);
+      if (e > 0) col = rgb(INK, GOLD, e);
+      sh = 'none';
+    }
     letters.forEach(function (l) { l.style.textShadow = sh; l.style.color = col; });
 
-    // 3. o sanduíche: VOCÊS SÃO A / LUZ / DO MUNDO.
-    var t1 = easeOut(range(q, 0.22, 0.38));
+    // 3. o sanduíche em tinta: VOCÊS SÃO A / LUZ / DO MUNDO.
+    var t1 = easeOut(range(q, 0.42, 0.56));
     eb.style.opacity = t1.toFixed(3);
     eb.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - t1) * 10).toFixed(1) + 'px,0)';
 
-    var tm = easeOut(range(q, 0.30, 0.46));
+    var tm = easeOut(range(q, 0.48, 0.62));
     mundo.style.opacity = tm.toFixed(3);
     mundo.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tm) * 10).toFixed(1) + 'px,0)';
 
-    var tr = easeOut(range(q, 0.40, 0.52));
+    var tr = easeOut(range(q, 0.56, 0.68));
     rf.style.opacity = tr.toFixed(3);
     rf.style.transform = reduced ? '' : 'translate3d(0,' + ((1 - tr) * 8).toFixed(1) + 'px,0)';
 
-    // 4. ecos: a luz se reflete
-    echoes.forEach(function (el) {
-      var d = parseFloat(el.getAttribute('data-d'));
-      var t = easeOut(range(q, 0.54 + d, 0.82 + d));
-      var y = parseFloat(el.getAttribute('data-y')) * L.Fk;
-      var s = parseFloat(el.getAttribute('data-s'));
-      var o = parseFloat(el.getAttribute('data-o'));
-      var tt = reduced ? 1 : mix(0.62, 1, t);   // nasce já afastado e termina de se abrir
-      el.style.opacity = (o * t).toFixed(3);
-      el.style.transform = 'translate3d(0,' + (y * tt).toFixed(1) + 'px,0) scale(' + mix(1, s, tt).toFixed(3) + ')';
-    });
-
-    // 5. fachos laterais: a luz se multiplica
-    var ts = easeOut(range(q, 0.56, 0.84));
-    srays.forEach(function (r) {
-      var o = parseFloat(r.getAttribute('data-o'));
-      r.style.opacity = (o * ts).toFixed(3);
-      r.style.transform = 'scaleY(' + (reduced ? 1 : ts).toFixed(3) + ')';
-    });
-
-    // 6. tudo volta ao preto
+    // 4. tudo se dissolve no branco
     vfade.style.opacity = easeInOut(range(q, 0.91, 1)).toFixed(3);
   }
 
@@ -1083,13 +1060,9 @@
     show(b3, easeOut(range(e, 0.66, 0.80)));
     show(b4, easeOut(range(e, 0.74, 0.86)));
 
-    // a palavra "luz" recebe o mesmo brilho de LUZ
+    // a palavra "luz" esquenta, como LUZ: no branco, luz é menos tinta
     var g = easeOut(range(e, 0.78, 0.96));
-    bluz.style.color = 'rgb(' + Math.round(mix(239, 250, g)) + ',' + Math.round(mix(232, 244, g)) + ',' + Math.round(mix(218, 228, g)) + ')';
-    bluz.style.textShadow = g < 0.01 ? 'none' :
-      '0 0 ' + (4 * g).toFixed(1) + 'px rgba(255,246,226,' + (0.35 * g).toFixed(3) + '),' +
-      '0 0 ' + (18 * g).toFixed(1) + 'px rgba(255,232,190,' + (0.20 * g).toFixed(3) + '),' +
-      '0 0 ' + (56 * g).toFixed(1) + 'px rgba(255,220,160,' + (0.12 * g).toFixed(3) + ')';
+    bluz.style.color = 'rgb(' + Math.round(mix(28, 184, g)) + ',' + Math.round(mix(24, 146, g)) + ',' + Math.round(mix(20, 82, g)) + ')';
 
     bloom.style.opacity = (0.9 * g).toFixed(3);
     bloom.style.transform = 'translate(-50%,-50%) scale(' + mix(0.8, 1.15, g).toFixed(3) + ')';
