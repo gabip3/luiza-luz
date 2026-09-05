@@ -65,6 +65,29 @@
     perspective-origin: 50% 50%;
   }
 
+  /* grão: textura fina sobre o fundo, sempre atrás do texto */
+  .stage::before,
+  .estage::before,
+  .grain {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-image: radial-gradient(at 20% 80%, #fff 1px, transparent 0px);
+    background-size: 3px 3px;
+    opacity: 0.10;
+    mix-blend-mode: plus-lighter;
+    pointer-events: none;
+    user-select: none;
+  }
+  /* sobre o branco, o grão é escuro */
+  .estage::before,
+  .vstage.is-light .grain {
+    background-image: radial-gradient(at 20% 80%, #000 1px, transparent 0px);
+    mix-blend-mode: multiply;
+    opacity: 0.055;
+  }
+
   /* bloom atrás da palavra */
   .bloom {
     position: absolute;
@@ -529,6 +552,7 @@
 <section class="verses" id="verses">
   <div class="vstage" id="vstage">
     <div class="dawn" id="dawn"></div>
+    <div class="grain"></div>
     <div class="vbloom" id="vbloom"></div>
     <div class="vray vray--up" id="vrayUp"></div>
     <div class="vray vray--down" id="vrayDown"></div>
